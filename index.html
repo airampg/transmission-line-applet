@@ -6,43 +6,12 @@
     <meta name="description" content="Interactive transmission-line reactive power applet" />
     <title>Transmission-line reactive power applet</title>
     <style>
-      .support-link {
-        position: fixed;
-        top: 16px;
-        right: 16px;
-        z-index: 1000;
-        border: 1px solid #d1d5db;
-        background: #ffffff;
-        color: #111827;
-        border-radius: 999px;
-        padding: 9px 13px;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        font-size: 13px;
-        font-weight: 750;
-        text-decoration: none;
-        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.10);
-      }
-      .support-link:hover { background: #eef2ff; }
-      .plot-legend {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px 14px;
-        align-items: center;
-        margin: 8px 0 10px;
-        color: #4b5563;
-        font: 13px/1.35 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      }
-      .plot-legend span { display: inline-flex; align-items: center; gap: 6px; }
-      .plot-legend .line { width: 28px; height: 0; border-top: 3px solid #111827; display: inline-block; }
-      .plot-legend .dash { border-top: 2px dashed #ef4444; }
-      .plot-legend .band { width: 24px; height: 12px; background: rgba(156,163,175,0.25); border: 1px solid rgba(107,114,128,0.35); display: inline-block; border-radius: 3px; }
-      @media (max-width: 720px) {
-        .support-link {
-          position: static;
-          display: inline-block;
-          margin: 12px 14px 0;
-        }
-      }
+      .support-link{position:fixed;top:16px;right:16px;z-index:1000;border:1px solid #d1d5db;background:#fff;color:#111827;border-radius:999px;padding:9px 13px;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:13px;font-weight:750;text-decoration:none;box-shadow:0 8px 20px rgba(15,23,42,.10)}
+      .support-link:hover{background:#eef2ff}
+      .plot-legend{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin:8px 0 10px;color:#4b5563;font:13px/1.35 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+      .plot-legend span{display:inline-flex;align-items:center;gap:6px}.plot-legend i{display:inline-block;flex:0 0 auto}.plot-legend .line{width:28px;height:0;border-top:3px solid #111827}.plot-legend .dash{width:28px;height:0;border-top:2px dashed #ef4444}.plot-legend .band{width:24px;height:12px;background:rgba(156,163,175,.25);border:1px solid rgba(107,114,128,.35);border-radius:3px}
+      .line-instructions{border:1px solid #e5e7eb;background:#fbfdff;border-radius:18px;padding:16px;margin-bottom:16px;color:#4b5563;font-size:14px;line-height:1.55}.line-instructions h2{margin:0 0 10px;color:#111827;font-size:18px}.line-instructions ol{margin:8px 0 0;padding-left:20px}.line-instructions li{margin-bottom:7px}.line-instructions code{background:#f3f4f6;border-radius:6px;padding:1px 5px;color:#111827}
+      @media(max-width:720px){.support-link{position:static;display:inline-block;margin:12px 14px 0}}
     </style>
   </head>
   <body>
@@ -50,39 +19,11 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
-      function legendItems(title) {
-        const lower = title.toLowerCase();
-        if (lower.includes('reactive')) {
-          return [
-            ['line', 'Line net Q curve'],
-            ['dash', 'Q = 0 / selected load marker'],
-            ['band', 'Non-converged region']
-          ];
-        }
-        if (lower.includes('voltage')) {
-          return [
-            ['line', 'Receiving-end voltage curve'],
-            ['dash', 'V = 1.0 p.u. / selected load marker'],
-            ['band', 'Non-converged region']
-          ];
-        }
-        return [];
-      }
-      function applyPlotLegends() {
-        document.querySelectorAll('.chart').forEach(chart => {
-          if (chart.querySelector('.plot-legend')) return;
-          const title = chart.querySelector('.chartTitle, .chartHeader strong')?.textContent || '';
-          const items = legendItems(title);
-          if (!items.length) return;
-          const legend = document.createElement('div');
-          legend.className = 'plot-legend';
-          legend.innerHTML = items.map(([cls, txt]) => '<span><i class="' + cls + '"></i>' + txt + '</span>').join('');
-          const svg = chart.querySelector('svg');
-          if (svg) chart.insertBefore(legend, svg);
-        });
-      }
-      new MutationObserver(applyPlotLegends).observe(document.body, { childList: true, subtree: true });
-      window.addEventListener('load', applyPlotLegends);
+      function legendItems(title){const lower=title.toLowerCase();if(lower.includes('reactive'))return [['line','Line net Q curve'],['dash','Q = 0 and selected load marker'],['band','Non-converged region']];if(lower.includes('voltage'))return [['line','Receiving-end voltage curve'],['dash','V = 1.0 p.u. and selected load marker'],['band','Non-converged region']];return []}
+      function applyPlotLegends(){document.querySelectorAll('.chart').forEach(chart=>{if(chart.querySelector('.plot-legend'))return;const title=chart.querySelector('.chartTitle,.chartHeader strong')?.textContent||'';const items=legendItems(title);if(!items.length)return;const legend=document.createElement('div');legend.className='plot-legend';legend.innerHTML=items.map(([cls,txt])=>'<span><i class="'+cls+'"></i>'+txt+'</span>').join('');const svg=chart.querySelector('svg');if(svg)chart.insertBefore(legend,svg)})}
+      function openLineInstructions(){const buttons=[...document.querySelectorAll('.tabs button')];const notes=buttons.find(b=>/model notes/i.test(b.textContent));if(notes){notes.textContent='Instructions';if(!window.__lineInstructionsOpened){notes.click();window.__lineInstructionsOpened=true}}const section=[...document.querySelectorAll('.card')].find(c=>c.textContent.includes('Assumptions')&&c.textContent.includes('Nominal-π'));if(section&&!section.querySelector('.line-instructions')){const box=document.createElement('div');box.className='line-instructions';box.innerHTML='<h2>How to use this applet</h2><ol><li><b>Start with the Q sweep.</b> Use the default 400 kV line, then increase length towards 300–800 km to amplify shunt charging.</li><li><b>Look for the zero crossing.</b> In the Q sweep, negative line Q means net capacitive injection; positive line Q means net inductive absorption.</li><li><b>Freeze the y-axis.</b> This makes it easier to compare how the same curve shifts when sending-end voltage changes.</li><li><b>Vary sending-end voltage.</b> Increasing voltage strengthens the <code>V²B</code> capacitive term; decreasing voltage weakens it.</li><li><b>Increase loading.</b> Higher load raises current and the <code>I²X</code> series absorption term, pushing the line towards net inductive behaviour.</li><li><b>Use the voltage sweep.</b> At light load you should see the Ferranti-effect region; at heavier loading, series voltage drop dominates.</li></ol>';section.insertBefore(box,section.firstChild)}}
+      function maintainEnhancements(){applyPlotLegends();openLineInstructions()}
+      new MutationObserver(maintainEnhancements).observe(document.body,{childList:true,subtree:true});window.addEventListener('load',maintainEnhancements);setTimeout(maintainEnhancements,600);
     </script>
   </body>
 </html>
