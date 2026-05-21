@@ -23,6 +23,19 @@
         box-shadow: 0 8px 20px rgba(15, 23, 42, 0.10);
       }
       .support-link:hover { background: #eef2ff; }
+      .plot-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 14px;
+        align-items: center;
+        margin: 8px 0 10px;
+        color: #4b5563;
+        font: 13px/1.35 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      .plot-legend span { display: inline-flex; align-items: center; gap: 6px; }
+      .plot-legend .line { width: 28px; height: 0; border-top: 3px solid #111827; display: inline-block; }
+      .plot-legend .dash { border-top: 2px dashed #ef4444; }
+      .plot-legend .band { width: 24px; height: 12px; background: rgba(156,163,175,0.25); border: 1px solid rgba(107,114,128,0.35); display: inline-block; border-radius: 3px; }
       @media (max-width: 720px) {
         .support-link {
           position: static;
@@ -36,5 +49,40 @@
     <a class="support-link" href="./support-limit.html">Voltage-support limit demonstrator →</a>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      function legendItems(title) {
+        const lower = title.toLowerCase();
+        if (lower.includes('reactive')) {
+          return [
+            ['line', 'Line net Q curve'],
+            ['dash', 'Q = 0 / selected load marker'],
+            ['band', 'Non-converged region']
+          ];
+        }
+        if (lower.includes('voltage')) {
+          return [
+            ['line', 'Receiving-end voltage curve'],
+            ['dash', 'V = 1.0 p.u. / selected load marker'],
+            ['band', 'Non-converged region']
+          ];
+        }
+        return [];
+      }
+      function applyPlotLegends() {
+        document.querySelectorAll('.chart').forEach(chart => {
+          if (chart.querySelector('.plot-legend')) return;
+          const title = chart.querySelector('.chartTitle, .chartHeader strong')?.textContent || '';
+          const items = legendItems(title);
+          if (!items.length) return;
+          const legend = document.createElement('div');
+          legend.className = 'plot-legend';
+          legend.innerHTML = items.map(([cls, txt]) => '<span><i class="' + cls + '"></i>' + txt + '</span>').join('');
+          const svg = chart.querySelector('svg');
+          if (svg) chart.insertBefore(legend, svg);
+        });
+      }
+      new MutationObserver(applyPlotLegends).observe(document.body, { childList: true, subtree: true });
+      window.addEventListener('load', applyPlotLegends);
+    </script>
   </body>
 </html>
