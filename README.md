@@ -15,15 +15,24 @@ Interactive React applet for visualising the reactive power absorption/injection
 
 ```bash
 npm install
-npm run dev
+npx vite --host 0.0.0.0
 ```
 
 ## Build
 
 ```bash
-npm run build
+npm install
+npx vite build
 ```
 
 ## Deployment
 
 This repository is configured to deploy to GitHub Pages using GitHub Actions.
+
+After the first workflow run, enable GitHub Pages with **Settings → Pages → Build and deployment → Source: GitHub Actions** if it is not already enabled.
+
+The expected site URL is:
+
+```text
+https://airampg.github.io/transmission-line-applet/
+```
