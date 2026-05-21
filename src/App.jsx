@@ -81,7 +81,7 @@ function Metric({ label, value, unit }) {
   return <div className="metric"><div className="metricLabel">{label}</div><div className="metricValue">{value} <span>{unit}</span></div></div>;
 }
 
-function Chart({ data, yKey, yLabel, title, pLoadMW, pMaxMW, yZero = 0 }) {
+function Chart({ data, yKey, yLabel, title, pLoadMW, pMaxMW, yZero = 0, yTickDigits = 2 }) {
   const [xmin, setXmin] = useState(0);
   const [xmax, setXmax] = useState(pMaxMW);
   useEffect(() => { setXmin(0); setXmax(pMaxMW); }, [pMaxMW, title]);
@@ -134,7 +134,10 @@ function Chart({ data, yKey, yLabel, title, pLoadMW, pMaxMW, yZero = 0 }) {
   });
 
   const xticks = Array.from({ length: 6 }, (_, i) => xmin + (xmax - xmin) * i / 5);
-  const yticks = Array.from({ length: 5 }, (_, i) => ymin + (ymax - ymin) * i / 4);
+  const rawYticks = Array.from({ length: 5 }, (_, i) => ymin + (ymax - ymin) * i / 4);
+  const yticks = Array.from(new Set([...rawYticks, yZero].map((t) => Number(t.toFixed(10)))))
+    .filter((t) => t >= ymin && t <= ymax)
+    .sort((a, b) => a - b);
 
   return <div className="chart">
     <div className="chartHeader"><strong>{title}</strong><div className="tools"><button onClick={() => pan(-0.25)}>←</button><button onClick={() => pan(0.25)}>→</button><button onClick={() => zoom(0.5)}>Zoom in</button><button onClick={() => zoom(2)}>Zoom out</button><button onClick={() => { setXmin(0); setXmax(pMaxMW); }}>Reset</button></div></div>
@@ -143,7 +146,7 @@ function Chart({ data, yKey, yLabel, title, pLoadMW, pMaxMW, yZero = 0 }) {
       <rect x="0" y="0" width={w} height={h} fill="white" />
       <rect x={pad.l} y={pad.t} width={w - pad.l - pad.r} height={h - pad.t - pad.b} className="plotBg" />
       {bands.map(([a, b], i) => <rect key={i} x={sx(a)} y={pad.t} width={Math.max(0, sx(b) - sx(a))} height={h - pad.t - pad.b} className="badBand" />)}
-      {yticks.map((t) => <g key={`y${t}`}><line x1={pad.l} x2={w - pad.r} y1={sy(t)} y2={sy(t)} className="gridLine" /><text x={pad.l - 10} y={sy(t) + 4} textAnchor="end" className="tick">{fmt(t, 2)}</text></g>)}
+      {yticks.map((t) => <g key={`y${t}`}><line x1={pad.l} x2={w - pad.r} y1={sy(t)} y2={sy(t)} className="gridLine" /><text x={pad.l - 10} y={sy(t) + 4} textAnchor="end" className="tick">{fmt(t, yTickDigits)}</text></g>)}
       {xticks.map((t) => <g key={`x${t}`}><line x1={sx(t)} x2={sx(t)} y1={pad.t} y2={h - pad.b} className="gridLine" /><text x={sx(t)} y={h - pad.b + 24} textAnchor="middle" className="tick">{fmt(t, 0)}</text></g>)}
       {yZero >= ymin && yZero <= ymax && <line x1={pad.l} x2={w - pad.r} y1={sy(yZero)} y2={sy(yZero)} className="marker" />}
       {pLoadMW >= xmin && pLoadMW <= xmax && <line x1={sx(pLoadMW)} x2={sx(pLoadMW)} y1={pad.t} y2={h - pad.b} className="marker" />}
@@ -200,8 +203,8 @@ export default function App() {
       <section className="metrics"><Metric label="Receiving voltage" value={res.drawable ? fmt(res.vr, 4) : '—'} unit="p.u." /><Metric label="Receiving voltage" value={res.drawable ? fmt(kv(res.vr), 1) : '—'} unit="kV" /><Metric label="Angle difference" value={res.drawable ? fmt(res.delta, 2) : '—'} unit="deg" /><Metric label="Series current" value={res.drawable ? fmt(res.iser, 3) : '—'} unit="p.u." /><Metric label="Sending-end P" value={res.drawable ? fmt(res.ss.re, 4) : '—'} unit="p.u." /><Metric label="Sending-end Q" value={res.drawable ? fmt(res.ss.im, 4) : '—'} unit="p.u." /><Metric label="Line real loss" value={res.drawable ? fmt(res.loss, 5) : '—'} unit="p.u." /><Metric label="Line net Q" value={res.drawable ? fmt(res.qLine, 5) : '—'} unit="p.u." /></section>
       <section className="card"><div className="tabs">{[['balance', 'Reactive balance'], ['q', 'Q sweep'], ['v', 'Voltage sweep'], ['notes', 'Model notes']].map(([k, text]) => <button key={k} className={tab === k ? 'active' : ''} onClick={() => setTab(k)}>{text}</button>)}</div>
         {tab === 'balance' && <div className="stack"><div className="metrics"><Metric label="Series absorption" value={res.drawable ? fmt(res.qSeries, 5) : '—'} unit="p.u." /><Metric label="Sending shunt injection" value={res.drawable ? fmt(res.qShS, 5) : '—'} unit="p.u." /><Metric label="Receiving shunt injection" value={res.drawable ? fmt(res.qShR, 5) : '—'} unit="p.u." /><Metric label="Line net Q" value={res.drawable ? fmt(mw(res.qLine), 2) : '—'} unit="MVAr" /></div><div className="identity"><strong>Line-only reactive-power identity</strong><br />Q_line = Q_series + Q_shunt,sending + Q_shunt,receiving<div className="mono">{res.drawable ? `${fmt(res.qLine, 5)} = ${fmt(res.qSeries, 5)} + (${fmt(res.qShS, 5)}) + (${fmt(res.qShR, 5)}) p.u.` : 'No finite operating point.'}</div></div><div className="metrics"><Metric label="Approx. surge impedance" value={res.drawable ? fmt(res.zc, 3) : '—'} unit="p.u." /><Metric label="Approx. SIL" value={res.drawable ? fmt(res.sil, 3) : '—'} unit="p.u." /><Metric label="Approx. SIL" value={res.drawable ? fmt(mw(res.sil), 1) : '—'} unit="MW" /><Metric label="Selected load" value={fmt(mw(p), 1)} unit="MW" /></div></div>}
-        {tab === 'q' && <><Chart data={sweep} yKey="qMVAr" yLabel="Line net Q (MVAr)" title="Load sweep: line reactive absorption/injection" pLoadMW={mw(p)} pMaxMW={mw(pMax)} yZero={0} /><p className="small">Grey regions indicate non-converged operating points; plotted values there are last finite iterative estimates and should be interpreted qualitatively.</p></>}
-        {tab === 'v' && <><Chart data={sweep} yKey="vr" yLabel="Receiving-end voltage V_R (p.u.)" title="Load sweep: receiving-end voltage" pLoadMW={mw(p)} pMaxMW={mw(pMax)} yZero={1} /><p className="small">Light-load voltage rise corresponds to the Ferranti-effect region. Grey regions indicate numerical instability or non-convergence.</p></>}
+        {tab === 'q' && <><Chart data={sweep} yKey="qMVAr" yLabel="Line net Q (MVAr)" title="Load sweep: line reactive absorption/injection" pLoadMW={mw(p)} pMaxMW={mw(pMax)} yZero={0} yTickDigits={0} /><p className="small">Grey regions indicate non-converged operating points; plotted values there are last finite iterative estimates and should be interpreted qualitatively.</p></>}
+        {tab === 'v' && <><Chart data={sweep} yKey="vr" yLabel="Receiving-end voltage V_R (p.u.)" title="Load sweep: receiving-end voltage" pLoadMW={mw(p)} pMaxMW={mw(pMax)} yZero={1} yTickDigits={3} /><p className="small">Light-load voltage rise corresponds to the Ferranti-effect region. Grey regions indicate numerical instability or non-convergence.</p></>}
         {tab === 'notes' && <div className="small"><strong>Assumptions</strong><ul><li>Balanced three-phase steady-state phasor model.</li><li>Nominal-π equivalent: total series impedance Z = R + jX and total shunt admittance jB split equally at both ends.</li><li>The receiving-end load is a constant complex-power load.</li><li>For very long lines, a distributed-parameter model is more accurate than the nominal-π approximation.</li></ul></div>}
       </section></main></div></div></div>;
 }
